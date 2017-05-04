@@ -17,39 +17,39 @@ class SettingsForm extends ConfigFormBase {
 
   public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('orcid.settings');
-    $form['client_id'] = array(
+    $form['client_id'] = [
       '#type' => 'textfield',
-      '#title' => t('Client ID'),
+      '#title' => $this->t('Client ID'),
       '#default_value' => $config->get('client_id'),
       '#description' => t('The client id value <client-id> from ORCID client application registration')
-    );
-    $form['client_secret'] = array(
+    ];
+    $form['client_secret'] = [
       '#type' => 'textfield',
-      '#title' => t('Client secret'),
+      '#title' => $this->t('Client secret'),
       '#default_value' => $config->get('client_secret'),
-      '#description' => t('The client secret value <client-secret> from ORCID client application registration'),
-    );
+      '#description' => $this->t('The client secret value <client-secret> from ORCID client application registration'),
+    ];
     $entityManager = \Drupal::service('entity_field.manager');
     $fields = $entityManager->getFieldDefinitions('user', 'user');
     $user_fields = array();
     foreach ($fields as $key => $field) {
       if (($field->getType() == 'string') && strpos($key, 'field_') === 0) {
-        $user_fields[$key] = t($field->getLabel());
+        $user_fields[$key] = $this->t($field->getLabel());
       }
     }
-    $form['name_field'] = array(
+    $form['name_field'] = [
       '#type' => 'select',
       '#options' => $user_fields,
-      '#empty_option' => t('- Select -'),
-      '#title' => t('User field for ORCID account name'),
+      '#empty_option' => $this->t('- Select -'),
+      '#title' => $this->t('User field for ORCID account name'),
       '#default_value' => $config->get('name_field'),
-      '#description' => t('This field will be used to store the ORCID author name.'),
-    );
-    $form['sandbox'] = array(
+      '#description' => $this->t('This field will be used to store the ORCID author name.'),
+    ];
+    $form['sandbox'] = [
       '#type' => 'checkbox',
-      '#title' => t('Sandbox'),
+      '#title' => $this->t('Sandbox'),
       '#default_value' => $config->get('sandbox'),
-    );
+    ];
     return parent::buildForm($form, $form_state);
   }
 

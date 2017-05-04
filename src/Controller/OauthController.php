@@ -13,13 +13,13 @@ class OauthController extends ControllerBase {
     $destination = $_SESSION['orcid']['destination'];
     if (isset($destination)) {
       $response = new TrustedRedirectResponse($destination);
-      drupal_set_message(t($text));
+      drupal_set_message($this->t($text));
       unset($_SESSION['orcid']['destination']);
       return $response;
     }
-    $element = array(
-      '#markup' => t($text),
-    );
+    $element = [
+      '#markup' => $this->t($text),
+    ];
     return $element;
   }
 
@@ -36,7 +36,7 @@ class OauthController extends ControllerBase {
       // The client ID assigned to you by the provider
       'clientSecret' => $config->get('client_secret'),
       // The client password assigned to you by the provider
-      'redirectUri' => Url::fromUri('base:/orcid/oauth', array('absolute' => TRUE))
+      'redirectUri' => Url::fromUri('base:/orcid/oauth', ['absolute' => TRUE])
         ->toString(),
       'urlAuthorize' => !$config->get('sandbox') ? 'https://orcid.org/oauth/authorize' : 'https://sandbox.orcid.org/oauth/authorize',
       'urlAccessToken' => !$config->get('sandbox') ? 'https://pub.orcid.org/oauth/token' : 'https://sandbox.orcid.org/oauth/token',
@@ -74,7 +74,7 @@ class OauthController extends ControllerBase {
 
       $query = Database::getConnection()
         ->select('orcid', 'o')
-        ->fields('o', array('uid'))
+        ->fields('o', ['uid'])
         ->condition('orcid', $values['orcid'], '=');
       $result = $query->execute();
 
@@ -100,18 +100,18 @@ class OauthController extends ControllerBase {
       if ($account->id()) {
         $query = Database::getConnection()
           ->insert('orcid')
-          ->fields(array('orcid' => $values['orcid'], 'uid' => $account->id()))
+          ->fields(['orcid' => $values['orcid'], 'uid' => $account->id()])
           ->execute();
         return $this->finish('Your ORCID has been connected!');
       }
       //New user with New ORCID
       if ($account->id() == 0) {
-        $new_user = array(
+        $new_user = [
           'name' => $values['orcid'] . '@' . $token,
           'mail' => '',
           'pass' => $token,
           'status' => 1,
-        );
+        ];
         if ($config->get('name_field')) {
           $new_user[$config->get('name_field')] = $values['name'];
         }
@@ -119,7 +119,7 @@ class OauthController extends ControllerBase {
         $user->save();
         $query = Database::getConnection()
           ->insert('orcid')
-          ->fields(array('orcid' => $values['orcid'], 'uid' => $user->id()))
+          ->fields(['orcid' => $values['orcid'], 'uid' => $user->id()])
           ->execute();
         user_login_finalize($user);
         return $this->finish('Your account has been created with your ORCID!');

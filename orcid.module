@@ -29,28 +29,28 @@ function orcid_requirements($phase) {
 function orcid_form_user_login_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   $link = orcid_oath_link();
   if ($link) {
-    $form['orcid'] = array(
+    $form['orcid'] = [
       '#markup' => '<div><img src="http://orcid.org/sites/default/files/images/orcid_16x16.png">' . $link . '</div>',
-    );
+    ];
   }
 }
 
 function orcid_entity_extra_field_info() {
-  $extra_fields = array(
-    'user' => array(
-      'user' => array(
-        'display' => array(
-          'orcid' => array(
+  $extra_fields = [
+    'user' => [
+      'user' => [
+        'display' => [
+          'orcid' => [
             'label' => t('ORCID'),
             'description' => "User's unique ORCID identifier",
             'weight' => 0,
             'visible' => FALSE,
             //'render_class' => 'full\qualified\namespace\RenderClass',
-          ),
-        ),
-      ),
-    ),
-  );
+          ],
+        ],
+      ],
+    ],
+  ];
   return $extra_fields;
 }
 
@@ -67,18 +67,18 @@ function orcid_user_view_alter(array &$build, UserInterface $account, EntityView
     if ($id) {
       //https://members.orcid.org/logos-web-graphics
       $uri = 'http://orcid.org/' . $id;
-      $url = Url::fromUri($uri, array('absolute' => TRUE));
+      $url = Url::fromUri($uri, ['absolute' => TRUE]);
       $link = Link::fromTextAndUrl($uri, $url)->toString();
     }
     else {
       $link = orcid_oath_link();
     }
     if ($link) {
-      $build['orcid'] = array(
+      $build['orcid'] = [
         '#type' => 'item',
         '#markup' => '<div><img src="http://orcid.org/sites/default/files/images/orcid_16x16.png">' . $link . '</div>',
         '#weight' => $orcid_display['weight'],
-      );
+      ];
     }
   }
 }
@@ -100,7 +100,7 @@ function orcid_load_id($account) {
   if ($account->id()) {
     $query = Database::getConnection()
       ->select('orcid', 'o')
-      ->fields('o', array('orcid'))
+      ->fields('o', ['orcid'])
       ->condition('uid', $account->id(), '=');
     $result = $query->execute();
     foreach ($result as $item) {
@@ -118,9 +118,9 @@ function orcid_oath_link() {
   if ($config->get('client_id') == '' || $config->get('client_secret') == '') {
     return FALSE;
   }
-  $current_url = Url::fromRoute('<current>', array(), array('absolute' => TRUE))
+  $current_url = Url::fromRoute('<current>', [], ['absolute' => TRUE])
     ->toString();
-  $url = Url::fromRoute('orcid.oauth_redirect', array('destination' => $current_url));
+  $url = Url::fromRoute('orcid.oauth_redirect', ['destination' => $current_url]);
   $link = Link::fromTextAndUrl(t('Connect your ORCID iD'), $url);
   return $link->toString();
 }
