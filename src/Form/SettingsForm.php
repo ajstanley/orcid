@@ -45,6 +45,11 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('name_field'),
       '#description' => t('This field will be used to store the ORCID author name.'),
     );
+    $form['sandbox'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Sandbox'),
+      '#default_value' => $config->get('sandbox'),
+    );
     return parent::buildForm($form, $form_state);
   }
 
@@ -54,6 +59,7 @@ class SettingsForm extends ConfigFormBase {
       ->set('client_id', $values['client_id'])
       ->set('client_secret', $values['client_secret'])
       ->set('name_field', $values['name_field'])
+      ->set('sandbox', $values['sandbox'])
       ->save();
   }
 }

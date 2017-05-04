@@ -38,9 +38,9 @@ class OauthController extends ControllerBase {
       // The client password assigned to you by the provider
       'redirectUri' => Url::fromUri('base:/orcid/oauth', array('absolute' => TRUE))
         ->toString(),
-      'urlAuthorize' => 'https://orcid.org/oauth/authorize',
-      'urlAccessToken' => 'https://pub.orcid.org/oauth/token',
-      'urlResourceOwnerDetails' => 'http://pub.orcid.org/v1.2'
+      'urlAuthorize' => !$config->get('sandbox') ? 'https://orcid.org/oauth/authorize' : 'https://sandbox.orcid.org/oauth/authorize',
+      'urlAccessToken' => !$config->get('sandbox') ? 'https://pub.orcid.org/oauth/token' : 'https://sandbox.orcid.org/oauth/token',
+      'urlResourceOwnerDetails' => !$config->get('sandbox') ? 'http://pub.orcid.org/v1.2' : 'https://pub.sandbox.orcid.org/v1.2',
     ]);
 
     if (!isset($_GET['code'])) {
@@ -48,19 +48,19 @@ class OauthController extends ControllerBase {
         'scope' => ['/authenticate']
       ];
       $authorizationUrl = $provider->getAuthorizationUrl($options);
-//            $_SESSION['orchid']['state'] = $provider->getState();
+//            $_SESSION['orcid']['state'] = $provider->getState();
       $response = new TrustedRedirectResponse($authorizationUrl);
       return $response;
       //header('Location: ' . $authorizationUrl);
       //exit;
     }
-    /*        if (isset($_SESSION['orchid']['token'])) {
+    /*        if (isset($_SESSION['orcid']['token'])) {
                 if ($provider->getAccessToken('expires_in')->getExpires()) {
                     $accessToken->getRefreshToken();
                 }
             }*/
-    /*        elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['orchid']['state'])) {
-                unset($_SESSION['orchid']['state']);
+    /*        elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['orcid']['state'])) {
+                unset($_SESSION['orcid']['state']);
             }*/
     try {
       $accessToken = $provider->getAccessToken('authorization_code', [
@@ -68,7 +68,7 @@ class OauthController extends ControllerBase {
       ]);
 
       $token = $accessToken->getToken();
-      $_SESSION['orchid']['token'] = $token;
+      $_SESSION['orcid']['token'] = $token;
       $values = $accessToken->getValues();
       $account = \Drupal::currentUser()->getAccount();
 

@@ -11,3 +11,6 @@ orcid.config:
     name_field:
       type: text
       label: 'Name Field'
+    sandbox:
+      type: boolean
+      label: 'Sandbox'
