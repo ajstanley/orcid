@@ -86,7 +86,7 @@ function orcid_user_view_alter(array &$build, UserInterface $account, EntityView
 /**
  * Implements hook_ENTITY_TYPE_delete().
  */
-function orcid_delete_user($account) {
+function orcid__user_delete($account) {
   if ($account->id()) {
     $query = Database::getConnection()
       ->delete('orcid')
