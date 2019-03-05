@@ -13,7 +13,7 @@ class OauthController extends ControllerBase {
     $destination = $_SESSION['orcid']['destination'];
     if (isset($destination)) {
       $response = new TrustedRedirectResponse($destination);
-      drupal_set_message($this->t($text));
+      $this->messenger->addMessage($text);
       unset($_SESSION['orcid']['destination']);
       return $response;
     }
@@ -48,20 +48,10 @@ class OauthController extends ControllerBase {
         'scope' => ['/authenticate']
       ];
       $authorizationUrl = $provider->getAuthorizationUrl($options);
-//            $_SESSION['orcid']['state'] = $provider->getState();
       $response = new TrustedRedirectResponse($authorizationUrl);
       return $response;
-      //header('Location: ' . $authorizationUrl);
-      //exit;
     }
-    /*        if (isset($_SESSION['orcid']['token'])) {
-                if ($provider->getAccessToken('expires_in')->getExpires()) {
-                    $accessToken->getRefreshToken();
-                }
-            }*/
-    /*        elseif (empty($_GET['state']) || ($_GET['state'] !== $_SESSION['orcid']['state'])) {
-                unset($_SESSION['orcid']['state']);
-            }*/
+
     try {
       $accessToken = $provider->getAccessToken('authorization_code', [
         'code' => $_GET['code']
@@ -105,25 +95,34 @@ class OauthController extends ControllerBase {
         return $this->finish('Your ORCID has been connected!');
       }
       //New user with New ORCID
-      if ($account->id() == 0) {
-        $new_user = [
-          'name' => $values['orcid'] . '@' . $token,
-          'mail' => '',
-          'pass' => $token,
-          'status' => 1,
-        ];
-        if ($config->get('name_field')) {
-          $new_user[$config->get('name_field')] = $values['name'];
+        if ($account->id() == 0) {
+            if (!$config->get('allow_new')) {
+                $message = t("No user has this ORCID ID.  Please create account.");
+                return $this->finish($message);
+            }
+            $new_user = [
+                'name' => $values['name'],
+                'mail' => '',
+                'pass' => $token,
+                'status' => $config->get('activate'),
+            ];
+            if ($config->get('name_field')) {
+                $new_user[$config->get('name_field')] = $values['name'];
+            }
+            $user = User::create($new_user);
+            $user->save();
+
+            $query = Database::getConnection()
+                ->insert('orcid')
+                ->fields(['orcid' => $values['orcid'], 'uid' => $user->id()])
+                ->execute();
+            user_login_finalize($user);
+            $message = t('Your account has been created with your ORCID credentials!');
+            if (!$config->get('activate')) {
+                $message = t("Your account has been created from your ORCID credentials and is awaiting administrative approval");
+            }
+            return $this->finish($message);
         }
-        $user = User::create($new_user);
-        $user->save();
-        $query = Database::getConnection()
-          ->insert('orcid')
-          ->fields(['orcid' => $values['orcid'], 'uid' => $user->id()])
-          ->execute();
-        user_login_finalize($user);
-        return $this->finish('Your account has been created with your ORCID!');
-      }
     } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
       \Drupal::logger('orcid')->error($e->getMessage());
       //exit($e->getMessage());
