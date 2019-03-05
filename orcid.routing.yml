@@ -12,3 +12,6 @@ orcid.oauth_redirect:
     _controller: '\Drupal\orcid\Controller\OauthController::redirectPage'
   requirements:
     _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'
+
