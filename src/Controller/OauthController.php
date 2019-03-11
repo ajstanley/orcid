@@ -97,7 +97,7 @@ class OauthController extends ControllerBase {
       //New user with New ORCID
         if ($account->id() == 0) {
             if (!$config->get('allow_new')) {
-                $message = t("No user has this ORCID ID.  Please create account.");
+                $message = t("No user has this ORCID ID.  Please create account.")->render();
                 return $this->finish($message);
             }
             $new_user = [
@@ -117,9 +117,9 @@ class OauthController extends ControllerBase {
                 ->fields(['orcid' => $values['orcid'], 'uid' => $user->id()])
                 ->execute();
             user_login_finalize($user);
-            $message = t('Your account has been created with your ORCID credentials!');
+            $message = t('Your account has been created with your ORCID credentials!')->render();
             if (!$config->get('activate')) {
-                $message = t("Your account has been created from your ORCID credentials and is awaiting administrative approval");
+                $message = t("Your account has been created from your ORCID credentials and is awaiting administrative approval")->render();
             }
             return $this->finish($message);
         }
