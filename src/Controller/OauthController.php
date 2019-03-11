@@ -4,7 +4,6 @@ namespace Drupal\orcid\Controller;
 
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
-use Drupal\Core\Database\Database;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\user\Entity\User;
 use League\OAuth2\Client\Provider\GenericProvider;
@@ -65,7 +64,6 @@ class OauthController extends ControllerBase {
 
 
             $query = \Drupal::entityQuery('user');
-            $query->condition('status', 1);
             $query->condition('field_orcid_id', $values['orcid']);
             $result = $query->execute();
 
@@ -75,7 +73,11 @@ class OauthController extends ControllerBase {
                 if ($account->id() == 0) {
                     if ($user = User::load($uid)) {
                         user_login_finalize($user);
-                        return $this->finish('You have Logged in with ORCID!');
+                        $message = $this->t('You have Logged in with ORCID!')->render();
+                        if (!$user->isActive()) {
+                            $message = $this->t("Your account has been created from your ORCID credentials and is awaiting administrative approval")->render();
+                        }
+                        return $this->finish($message);
                     }
                 }
 
