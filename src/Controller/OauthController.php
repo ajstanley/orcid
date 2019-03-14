@@ -7,10 +7,22 @@ use Drupal\Core\Url;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\user\Entity\User;
 use League\OAuth2\Client\Provider\GenericProvider;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class OauthController extends ControllerBase {
+private $confirmed;
+    public function __construct() {
+        $confirmed = FALSE;
+    }
     public function finish($text = '') {
         $destination = $_SESSION['orcid']['destination'];
+        if ($this->confirmed) {
+            \Drupal::messenger()->addMessage($text);
+            $redirect_url = Url::fromRoute('<front>')->toString();
+            $response = new RedirectResponse($redirect_url);
+            return $response;
+        }
+
         if (isset($destination)) {
             $response = new TrustedRedirectResponse($destination);
             $this->messenger->addMessage($text);
@@ -20,6 +32,7 @@ class OauthController extends ControllerBase {
         $element = [
             '#markup' => $this->t($text),
         ];
+
         return $element;
     }
 
@@ -74,6 +87,7 @@ class OauthController extends ControllerBase {
                     if ($user = User::load($uid)) {
                         user_login_finalize($user);
                         $message = $this->t('You have Logged in with ORCID!')->render();
+                        $this->confirmed = TRUE;
                         if (!$user->isActive()) {
                             $message = $this->t("Your account has been created from your ORCID credentials and is awaiting administrative approval")->render();
                         }
@@ -116,6 +130,7 @@ class OauthController extends ControllerBase {
                 if (!$config->get('activate')) {
                     $message = t("Your account has been created from your ORCID credentials and is awaiting administrative approval")->render();
                 }
+                $this->confirmed = TRUE;
                 return $this->finish($message);
             }
         } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
@@ -124,4 +139,5 @@ class OauthController extends ControllerBase {
 
         return $this->finish('Failed!');
     }
+
 }

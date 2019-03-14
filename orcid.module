@@ -111,17 +111,23 @@ function orcid_load_id($account) {
 }
 
 /**
- * Implements hook_cache_flush().
+ * Implements hook_link().
  */
 function orcid_oath_link() {
   $config =  \Drupal::config('orcid.settings');
   if ($config->get('client_id') == '' || $config->get('client_secret') == '') {
     return FALSE;
   }
+  if ($config->get('allow_new')) {
+      $message = t("Use your ORCID account to log in, or create new account")->render();
+  }
+  else {
+      $message = t("Use your ORCID account to log in")->render();
+  }
   $current_url = Url::fromRoute('<current>', [], ['absolute' => TRUE])
     ->toString();
   $url = Url::fromRoute('orcid.oauth_redirect', ['destination' => $current_url]);
-  $link = Link::fromTextAndUrl(t('Connect your ORCID iD'), $url);
+  $link = Link::fromTextAndUrl(t($message), $url);
   return $link->toString();
 }
 
