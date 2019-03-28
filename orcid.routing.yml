@@ -15,3 +15,12 @@ orcid.oauth_redirect:
   options:
     no_cache: 'TRUE'
 
+orcid.unlink:
+  path: '/orcid/{user}/unlink'
+  defaults:
+    _title: 'ORCID OAuth2'
+    _controller: '\Drupal\orcid\Controller\OauthController::unlinkAccount'
+  requirements:
+    _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'

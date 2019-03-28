@@ -84,8 +84,6 @@ class OauthController extends ControllerBase {
             $_SESSION['orcid']['token'] = $token;
             $values = $accessToken->getValues();
             $account = \Drupal::currentUser()->getAccount();
-
-
             $query = \Drupal::entityQuery('user');
             $query->condition($config->get('name_field'), $values['orcid']);
             $result = $query->execute();
@@ -110,7 +108,8 @@ class OauthController extends ControllerBase {
             if ($account->id()) {
                 $user = \Drupal\user\Entity\User::load($account->id());
                 $user->set( $config->get('name_field'), $values['orcid']);
-
+                $user->save();
+                $this->confirmed = TRUE;
                 return $this->finish('Your ORCID has been connected!');
             }
             //New user with New ORCID
@@ -148,6 +147,17 @@ class OauthController extends ControllerBase {
         }
 
         return $this->finish('Failed!');
+    }
+
+    public function unlinkAccount($user) {
+        $config =  \Drupal::config('orcid.settings');
+        $user = \Drupal\user\Entity\User::load($user);
+        $user->set( $config->get('name_field'), '');
+        $user->save();
+        $message = t("ORCID ID is no longer associated with this account");
+        \Drupal::messenger()->addMessage($message);
+        return new RedirectResponse(\Drupal::url('entity.user.edit_form', ['user' => $user->id()]));
+
     }
 
 }

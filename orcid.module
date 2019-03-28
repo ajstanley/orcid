@@ -145,14 +145,26 @@ function orcid_oath_link() {
 
 function orcid_attach_link() {
     $config =  \Drupal::config('orcid.settings');
+    $uid = \Drupal::currentUser()->id();
+    $field = $config->get('name_field');
+    $user = \Drupal\user\Entity\User::load($uid);
+    $orcid_id = $user->$field->value;
     if ($config->get('client_id') == '' || $config->get('client_secret') == '') {
         return FALSE;
     }
-    $message = t("Link your ORCID account");
+    $is_linked = $orcid_id ? t("Unlink your ORCID account") : t("Link your ORCID account");
+    $message = $is_linked ? t("Unlink your ORCID account") : t("Link your ORCID account");
+    if (!$is_linked) {
+        $current_url = Url::fromRoute('<current>', [], ['absolute' => TRUE])
+            ->toString();
+        $url = Url::fromRoute('orcid.oauth_redirect', ['destination' => $current_url]);
+        $link = Link::fromTextAndUrl($message, $url);
+        return $link->toString();
+    }
+    else{
+        $url = Url::fromRoute('orcid.unlink', ['user' => $uid]);
+        $link = Link::fromTextAndUrl($message, $url);
+        return $link->toString();
+    }
 
-    $current_url = Url::fromRoute('<current>', [], ['absolute' => TRUE])
-        ->toString();
-    $url = Url::fromRoute('orcid.oauth_redirect', ['destination' => $current_url]);
-    $link = Link::fromTextAndUrl($message, $url);
-    return $link->toString();
 }
