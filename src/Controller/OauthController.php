@@ -87,12 +87,12 @@ class OauthController extends ControllerBase {
 
 
             $query = \Drupal::entityQuery('user');
-            $query->condition('field_orcid_id', $values['orcid']);
+            $query->condition($config->get('name_field'), $values['orcid']);
             $result = $query->execute();
 
+            // ORCID supplied identifier is attached to a user entity.
             foreach ($result as $item => $uid) {
-                //ORCID in record
-                //anonymous user
+                //anonymous user logs in to account with attachd ORCID ID
                 if ($account->id() == 0) {
                     if ($user = User::load($uid)) {
                         user_login_finalize($user);
@@ -105,13 +105,8 @@ class OauthController extends ControllerBase {
                     }
                 }
 
-                if ($account->id() == $uid) {//ORCID match UID
-                    return $this->finish('Your ORCID has been connected!');
-                } else {
-                    //TODO: What if user account can't match ORCID record
-                }
             }
-            //Existing User
+            //Existing logged in User has ORCID field updated.
             if ($account->id()) {
                 $user = \Drupal\user\Entity\User::load($account->id());
                 $user->set( $config->get('name_field'), $values['orcid']);
