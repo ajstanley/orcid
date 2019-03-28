@@ -10,10 +10,12 @@ use League\OAuth2\Client\Provider\GenericProvider;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class OauthController extends ControllerBase {
-private $confirmed;
+    private $confirmed;
+
     public function __construct() {
         $confirmed = FALSE;
     }
+
     public function finish($text = '') {
         $destination = $_SESSION['orcid']['destination'];
         if ($this->confirmed) {
@@ -35,6 +37,14 @@ private $confirmed;
 
         return $element;
     }
+
+    /**
+     * Workhorse function to control all redirects.
+     *
+     * @return array|TrustedRedirectResponse|RedirectResponse
+     * @throws \Drupal\Core\Entity\EntityStorageException
+     */
+
 
     public function redirectPage() {
         if (isset($_GET['destination'])) {
@@ -104,7 +114,7 @@ private $confirmed;
             //Existing User
             if ($account->id()) {
                 $user = \Drupal\user\Entity\User::load($account->id());
-                $user->set('field_orcid_id', $values['orcid']);
+                $user->set( $config->get('name_field'), $values['orcid']);
 
                 return $this->finish('Your ORCID has been connected!');
             }
@@ -121,17 +131,22 @@ private $confirmed;
                     'status' => $config->get('activate'),
                     $config->get('name_field') => $values['orcid'],
                 ];
-
-                $user = User::create($new_user);
-                $user->save();
-
-                user_login_finalize($user);
-                $message = t('Your account has been created with your ORCID credentials!')->render();
-                if (!$config->get('activate')) {
-                    $message = t("Your account has been created from your ORCID credentials and is awaiting administrative approval")->render();
+                if (user_load_by_name($values['name'])) {
+                    $user = User::create($new_user);
+                    $user->save();
+                    user_login_finalize($user);
+                    $message = t('Your account has been created with your ORCID credentials!')->render();
+                    if (!$config->get('activate')) {
+                        $message = t("Your account has been created from your ORCID credentials and is awaiting administrative approval")->render();
+                    }
+                    $this->confirmed = TRUE;
+                    return $this->finish($message);
                 }
-                $this->confirmed = TRUE;
-                return $this->finish($message);
+                else {
+                    return $this->finish(t("Account with this name already exists."));
+                }
+
+
             }
         } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
             \Drupal::logger('orcid')->error($e->getMessage());
