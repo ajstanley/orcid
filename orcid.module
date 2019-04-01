@@ -98,7 +98,7 @@ function orcid_user_view_alter(array &$build, UserInterface $account, EntityView
 /**
  * Implements hook_ENTITY_TYPE_delete().
  */
-function orcid__user_delete($account) {
+function orcid_user_delete($account) {
   if ($account->id()) {
     $query = Database::getConnection()
       ->delete('orcid')
@@ -152,9 +152,8 @@ function orcid_attach_link() {
     if ($config->get('client_id') == '' || $config->get('client_secret') == '') {
         return FALSE;
     }
-    $is_linked = $orcid_id ? t("Unlink your ORCID account") : t("Link your ORCID account");
-    $message = $is_linked ? t("Unlink your ORCID account") : t("Link your ORCID account");
-    if (!$is_linked) {
+    $message = $orcid_id ? t("Unlink your ORCID account") : t("Link your ORCID account");
+    if (!$orcid_id) {
         $current_url = Url::fromRoute('<current>', [], ['absolute' => TRUE])
             ->toString();
         $url = Url::fromRoute('orcid.oauth_redirect', ['destination' => $current_url]);
