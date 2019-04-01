@@ -9,6 +9,7 @@ use Drupal\user\Entity\User;
 use League\OAuth2\Client\Provider\GenericProvider;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
+
 class OauthController extends ControllerBase {
     private $confirmed;
 
@@ -16,10 +17,12 @@ class OauthController extends ControllerBase {
         $confirmed = FALSE;
     }
 
+
+
     public function finish($text = '') {
         $destination = $_SESSION['orcid']['destination'];
         if ($this->confirmed) {
-            \Drupal::messenger()->addMessage($text);
+            $this->messenger()->addMessage($text);
             $redirect_url = Url::fromRoute('<front>')->toString();
             $response = new RedirectResponse($redirect_url);
             return $response;
@@ -51,7 +54,7 @@ class OauthController extends ControllerBase {
             $_SESSION['orcid']['destination'] = $_GET['destination'];
         }
 
-        $config = \Drupal::config('orcid.settings');
+        $config = $this->config('orcid.settings');
         //http://members.orcid.org/api/tokens-through-3-legged-oauth-authorization
         //Public API only at this moment
         $provider = new GenericProvider([
@@ -106,7 +109,7 @@ class OauthController extends ControllerBase {
             }
             //Existing logged in User has ORCID field updated.
             if ($account->id()) {
-                $user = \Drupal\user\Entity\User::load($account->id());
+                $user = User::load($account->id());
                 $user->set( $config->get('name_field'), $values['orcid']);
                 $user->save();
                 $this->confirmed = TRUE;
@@ -143,21 +146,22 @@ class OauthController extends ControllerBase {
 
             }
         } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
-            \Drupal::logger('orcid')->error($e->getMessage());
+            $this->getLogger('orcid')->error($e->getMessage());
+
         }
 
         return $this->finish('Failed!');
     }
 
     public function unlinkAccount($user) {
-        $config =  \Drupal::config('orcid.settings');
-        $user = \Drupal\user\Entity\User::load($user);
+        $config = $this->config('orcid.settings');
+        $user = User::load($user);
         $user->set( $config->get('name_field'), '');
         $user->save();
         $message = t("ORCID ID is no longer associated with this account");
-        \Drupal::messenger()->addMessage($message);
-        return new RedirectResponse(\Drupal::url('entity.user.edit_form', ['user' => $user->id()]));
-
+        $this->messenger()->addMessage($message);
+        $url = Url::fromRoute('entity.user.edit_form', ['user' => $user->id()])->toString();
+        return new RedirectResponse($url);
     }
 
 }
