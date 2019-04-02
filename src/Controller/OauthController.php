@@ -68,7 +68,6 @@ class OauthController extends ControllerBase {
         if (isset($_GET['destination'])) {
             $_SESSION['orcid']['destination'] = $_GET['destination'];
         }
-
         $config = $this->config('orcid.settings');
         //http://members.orcid.org/api/tokens-through-3-legged-oauth-authorization
         //Public API only at this moment
@@ -95,7 +94,7 @@ class OauthController extends ControllerBase {
             return $response;
         }
 
-        //Authntication received.
+        //Authentication received.
 
         try {
             $accessToken = $provider->getAccessToken('authorization_code', [
@@ -105,15 +104,15 @@ class OauthController extends ControllerBase {
             $token = $accessToken->getToken();
             $_SESSION['orcid']['token'] = $token;
             $values = $accessToken->getValues();
-            $account = \Drupal::currentUser()->getAccount();
-            $query = $this->entityQuery('user');
+            $current_user_id = $this->currentUser()->id();
+            $query = $this->entityQuery->get('user');
             $query->condition($config->get('name_field'), $values['orcid']);
             $result = $query->execute();
 
             // ORCID supplied identifier is attached to a user entity.
             foreach ($result as $item => $uid) {
                 //anonymous user logs in to account with attached ORCID ID
-                if ($account->id() == 0) {
+                if ($current_user_id == 0) {
                     if ($user = User::load($uid)) {
                         user_login_finalize($user);
                         $message = $this->t('You have Logged in with ORCID!')->render();
@@ -127,8 +126,8 @@ class OauthController extends ControllerBase {
 
             }
             //Existing logged in User has ORCID fields updated to connect.
-            if ($account->id()) {
-                $user = User::load($account->id());
+            if ($current_user_id) {
+                $user = User::load($current_user_id);
                 $user->set($config->get('name_field'), $values['orcid']);
                 $user->set($config->get('access_token'), $values['access_token']);
                 $user->set($config->get('refresh_token'), $values['refresh_token']);
@@ -139,7 +138,7 @@ class OauthController extends ControllerBase {
                 return $this->finish('Your ORCID has been connected!');
             }
             //New user with New ORCID
-            if ($account->id() == 0) {
+            if ($current_user_id == 0) {
                 if (!$config->get('allow_new')) {
                     $message = t("No user has this ORCID ID.  Please create account.")->render();
                     return $this->finish($message);
