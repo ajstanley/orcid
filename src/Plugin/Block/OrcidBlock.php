@@ -57,7 +57,8 @@ class OrcidBlock extends BlockBase implements ContainerFactoryPluginInterface {
         $config = $this->configFactory->get('orcid.settings');
         $name = $config->get('name_field');
         $identifier = $user->get($name)->value;
-        $markup = "<p><a href='https://orcid.org'><img alt='ORCID logo' src='https://orcid.org/sites/default/files/images/orcid_16x16.png' width='16' height='16' hspace='4' /></a> <a href='https://orcid.org/{$identifier}'>https://orcid.org/{$identifier}</a></p>";
+        $markup = $identifier ? "<p><a href='https://orcid.org'><img alt='ORCID logo' src='https://orcid.org/sites/default/files/images/orcid_16x16.png' width='16' height='16' hspace='4' /></a> 
+                                    <a href='https://orcid.org/{$identifier}'>https://orcid.org/{$identifier}</a></p>" : '';
         return [
             '#markup' => $markup,
         ];
@@ -70,19 +71,7 @@ class OrcidBlock extends BlockBase implements ContainerFactoryPluginInterface {
         return AccessResult::allowedIfHasPermission($account, 'access content');
     }
 
-    /**
-     * {@inheritdoc}
-     */
-    public function blockForm($form, FormStateInterface $form_state) {
-        $config = $this->getConfiguration();
-
-        return $form;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function blockSubmit($form, FormStateInterface $form_state) {
-        $this->configuration['my_block_settings'] = $form_state->getValue('my_block_settings');
+    public function getCacheMaxAge() {
+        return 0;
     }
 }
