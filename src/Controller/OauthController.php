@@ -7,16 +7,31 @@ use Drupal\Core\Url;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\user\Entity\User;
 use League\OAuth2\Client\Provider\GenericProvider;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 
 class OauthController extends ControllerBase {
     private $confirmed;
 
-    public function __construct() {
+    /**
+     * Entity query.
+     *
+     * @var \Drupal\Core\Entity\Query\QueryFactory
+     */
+    protected $entityQuery;
+
+    public function __construct($entity_query) {
         $confirmed = FALSE;
+        $this->entityQuery = $entity_query;
     }
 
+    public static function create(ContainerInterface $container) {
+        return new static(
+            $container->get('entity.query')
+        );
+
+    }
 
 
     public function finish($text = '') {
@@ -69,6 +84,8 @@ class OauthController extends ControllerBase {
             'urlResourceOwnerDetails' => !$config->get('sandbox') ? 'http://pub.orcid.org/v1.2' : 'https://pub.sandbox.orcid.org/v1.2',
         ]);
 
+        //Attempt authentication.
+
         if (!isset($_GET['code'])) {
             $options = [
                 'scope' => ['/authenticate']
@@ -77,6 +94,8 @@ class OauthController extends ControllerBase {
             $response = new TrustedRedirectResponse($authorizationUrl);
             return $response;
         }
+
+        //Authntication received.
 
         try {
             $accessToken = $provider->getAccessToken('authorization_code', [
@@ -87,13 +106,13 @@ class OauthController extends ControllerBase {
             $_SESSION['orcid']['token'] = $token;
             $values = $accessToken->getValues();
             $account = \Drupal::currentUser()->getAccount();
-            $query = \Drupal::entityQuery('user');
+            $query = $this->entityQuery('user');
             $query->condition($config->get('name_field'), $values['orcid']);
             $result = $query->execute();
 
             // ORCID supplied identifier is attached to a user entity.
             foreach ($result as $item => $uid) {
-                //anonymous user logs in to account with attachd ORCID ID
+                //anonymous user logs in to account with attached ORCID ID
                 if ($account->id() == 0) {
                     if ($user = User::load($uid)) {
                         user_login_finalize($user);
@@ -107,10 +126,14 @@ class OauthController extends ControllerBase {
                 }
 
             }
-            //Existing logged in User has ORCID field updated.
+            //Existing logged in User has ORCID fields updated to connect.
             if ($account->id()) {
                 $user = User::load($account->id());
-                $user->set( $config->get('name_field'), $values['orcid']);
+                $user->set($config->get('name_field'), $values['orcid']);
+                $user->set($config->get('access_token'), $values['access_token']);
+                $user->set($config->get('refresh_token'), $values['refresh_token']);
+                $user->set($config->get('scope'), $values['scope']);
+                $user->set($config->get('expiry'), $values['expires_in']);
                 $user->save();
                 $this->confirmed = TRUE;
                 return $this->finish('Your ORCID has been connected!');
@@ -127,6 +150,10 @@ class OauthController extends ControllerBase {
                     'pass' => $token,
                     'status' => $config->get('activate'),
                     $config->get('name_field') => $values['orcid'],
+                    $config->get('access_token') => $values['access_token'],
+                    $config->get('refresh_token') => $values['refresh_token'],
+                    $config->get('scope') => $values['scope'],
+                    $config->get('expiry') => $values['expires_in'],
                 ];
                 if (user_load_by_name($values['name'])) {
                     $user = User::create($new_user);
@@ -138,12 +165,9 @@ class OauthController extends ControllerBase {
                     }
                     $this->confirmed = TRUE;
                     return $this->finish($message);
-                }
-                else {
+                } else {
                     return $this->finish(t("Account with this name already exists."));
                 }
-
-
             }
         } catch (\League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
             $this->getLogger('orcid')->error($e->getMessage());
@@ -156,7 +180,11 @@ class OauthController extends ControllerBase {
     public function unlinkAccount($user) {
         $config = $this->config('orcid.settings');
         $user = User::load($user);
-        $user->set( $config->get('name_field'), '');
+        $user->set($config->get('name_field'), '');
+        $user->set($config->get('access_token'), '');
+        $user->set($config->get('refresh_token'), '');
+        $user->set($config->get('scope'), '');
+        $user->set($config->get('expiry'), '');
         $user->save();
         $message = t("ORCID ID is no longer associated with this account");
         $this->messenger()->addMessage($message);
