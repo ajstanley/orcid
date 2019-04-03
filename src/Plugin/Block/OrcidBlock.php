@@ -28,11 +28,13 @@ class OrcidBlock extends BlockBase implements ContainerFactoryPluginInterface {
      */
     protected $currentUser;
     protected $configFactory;
+    protected $currentPath;
 
-    public function __construct(array $configuration, $plugin_id, $plugin_definition, AccountInterface $current_user, $config_factory) {
+    public function __construct(array $configuration, $plugin_id, $plugin_definition, AccountInterface $current_user, $config_factory, $current_path) {
         parent::__construct($configuration, $plugin_id, $plugin_definition);
         $this->currentUser = $current_user;
         $this->configFactory = $config_factory;
+        $this->currentPath = $current_path;
     }
 
     /**
@@ -44,7 +46,8 @@ class OrcidBlock extends BlockBase implements ContainerFactoryPluginInterface {
             $plugin_id,
             $plugin_definition,
             $container->get('current_user'),
-            $container->get('config.factory')
+            $container->get('config.factory'),
+            $container->get('path.current')
         );
     }
 
@@ -53,7 +56,7 @@ class OrcidBlock extends BlockBase implements ContainerFactoryPluginInterface {
      */
     public function build() {
         $current_user_id = $this->currentUser->id();
-        $current_path = \Drupal::service('path.current')->getPath();
+        $current_path = $this->currentPath->getPath();
         $path_parts = explode('/', $current_path);
         $user = User::load($path_parts[2]);
         $config = $this->configFactory->get('orcid.settings');
