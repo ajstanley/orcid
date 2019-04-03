@@ -53,7 +53,9 @@ class OrcidBlock extends BlockBase implements ContainerFactoryPluginInterface {
      */
     public function build() {
         $current_user_id = $this->currentUser->id();
-        $user = User::load($current_user_id);
+        $current_path = \Drupal::service('path.current')->getPath();
+        $path_parts = explode('/', $current_path);
+        $user = User::load($path_parts[2]);
         $config = $this->configFactory->get('orcid.settings');
         $name = $config->get('name_field');
         $identifier = $user->get($name)->value;
